@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010 IBM Corporation and others.
+ * Copyright (c) 2020 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -20,7 +20,7 @@ import java.security.PrivilegedAction;
 /**
  * Helper class that performs necessary doPriv during reflection.
  * 
- * This class is borrowed from the monitor-1.0 feature.
+ * This class is borrowed from com.ibm.ws.monitor/src/com/ibm/ws/monitor/internal/ReflectionHelper.java.
  */
 class ReflectionHelper {
 
