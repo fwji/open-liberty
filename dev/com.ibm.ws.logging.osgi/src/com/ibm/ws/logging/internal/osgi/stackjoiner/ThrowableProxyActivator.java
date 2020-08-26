@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2020 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
 package com.ibm.ws.logging.internal.osgi.stackjoiner;
 
 import java.io.File;
@@ -85,42 +95,46 @@ public class ThrowableProxyActivator {
      *
      * @param bundleContext the bundleContext
      */
-    protected void activate() throws Exception {
-    	String runtimeVersion = getRuntimeClassVersion();
-        if (runtimeVersion != null && !runtimeVersion.equals(getCurrentVersion())) {
-            // TODO: Use a compatibility check instead
-            throw new IllegalStateException("Incompatible proxy code (version " + runtimeVersion + ")");
-        }
-
-        // Find or create the proxy jar if the runtime code isn't loaded
-        if (runtimeVersion == null) {
-	        JarFile proxyJar = getBootProxyJarIfCurrent();
-	        if (proxyJar == null) {
-	            proxyJar = createBootProxyJar();
-	        }
-	        inst.appendToBootstrapClassLoaderSearch(proxyJar);
-        }
-        
+    protected void activate() throws Exception {    
         // Store a reference to the printStackTraceOverride method from BaseTraceService
         throwableInfo = new ThrowableInfo(inst);
         
-        activateThrowableProxyMethodTarget();
-        
-		inst.addTransformer(new ThrowableClassFileTransformer(), true);
-		for (Class<?> clazz : inst.getAllLoadedClasses()) {
-		    if (clazz.getName().equals("java.lang.Throwable")) {
-		    	try {
-		            inst.retransformClasses(clazz);
-		        } catch (Throwable t) {
-		            t.printStackTrace();
-		        }
-		     }
-		}
+        if (throwableInfo.isInitialized()) {
+        	String runtimeVersion = getRuntimeClassVersion();
+            if (runtimeVersion != null && !runtimeVersion.equals(getCurrentVersion())) {
+                // TODO: Use a compatibility check instead
+                throw new IllegalStateException("Incompatible proxy code (version " + runtimeVersion + ")");
+            }
+
+            // Find or create the proxy jar if the runtime code isn't loaded
+            if (runtimeVersion == null) {
+    	        JarFile proxyJar = getBootProxyJarIfCurrent();
+    	        if (proxyJar == null) {
+    	            proxyJar = createBootProxyJar();
+    	        }
+    	        inst.appendToBootstrapClassLoaderSearch(proxyJar);
+            }
+            
+        	activateThrowableProxyMethodTarget();
+    
+			inst.addTransformer(new ThrowableClassFileTransformer(), true);
+			for (Class<?> clazz : inst.getAllLoadedClasses()) {
+			    if (clazz.getName().equals("java.lang.Throwable")) {
+			    	try {
+			            inst.retransformClasses(clazz);
+			        } catch (Throwable t) {
+			            t.printStackTrace();
+			        }
+			     }
+			}
+        }
+    	
 	}
 	
 	protected void deactivate() throws Exception {
         try {
-            deactivateThrowableProxyTarget();
+        	if (throwableInfo.isInitialized())
+        		deactivateThrowableProxyTarget();
         } catch (Exception e) {
             throw new Exception(e);
         }

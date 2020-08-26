@@ -14,7 +14,16 @@ import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 
+import com.ibm.websphere.ras.Tr;
+import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.logging.internal.osgi.OsgiLogConstants;
+
+/**
+ * Retrieves the printStackTraceOverride method from BaseTraceService via reflection.
+ */
 public class ThrowableInfo {
+	
+	 private static final TraceComponent tc = Tr.register(ThrowableInfo.class);
 
     final String BASE_TRACE_SERVICE_CLASS_NAME = "com.ibm.ws.logging.internal.impl.BaseTraceService";
     final String BASE_TRACE_SERVICE_METHOD_NAME = "printStackTraceOverride";
@@ -27,9 +36,15 @@ public class ThrowableInfo {
 			Method method = ReflectionHelper.getDeclaredMethod(btsClass, BASE_TRACE_SERVICE_METHOD_NAME, Throwable.class, PrintStream.class);
 			setBtsMethod(method);
         }
-        else {
-        	System.err.println("The logging stack trace joiner could not be initialized.");
+    }
+    
+    public boolean isInitialized() {
+    	if (getBtsMethod() == null) {
+    		if (tc.isDebugEnabled())
+    			Tr.debug(tc, "Stack joiner could not be initialized. Failed to reflect method " + BASE_TRACE_SERVICE_METHOD_NAME + " in " + BASE_TRACE_SERVICE_CLASS_NAME + ".");
+        	return false;
         }
+    	return true;
     }
     
     private Class<?> retrieveClass(Instrumentation inst, String classGroup) {
